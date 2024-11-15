@@ -19,6 +19,7 @@ function initializeTests(projectManager, supportedTargetPlatforms, describeTests
     // Log current configuration
     console.log("Initializing tests for " + testUtil_1.TestUtil.getPluginName());
     console.log(TestConfig.TestAppName + "\n" + TestConfig.TestNamespace);
+    console.log("Test RN Version:" + TestConfig.TestRNVersion + "\n");
     console.log("Testing " + TestConfig.thisPluginPath + ".");
     targetPlatforms.forEach(function (platform) {
         console.log("On " + platform.getName());
@@ -65,7 +66,7 @@ function initializeTests(projectManager, supportedTargetPlatforms, describeTests
      * Creates a test project directory at the given path.
      */
     function createTestProject(directory) {
-        return projectManager.setupProject(directory, TestConfig.templatePath, TestConfig.TestAppName, TestConfig.TestNamespace);
+        return projectManager.setupProject(directory, TestConfig.templatePath, TestConfig.TestAppName, TestConfig.TestNamespace, TestConfig.TestRNVersion);
     }
     /**
      * Creates and runs the tests from the projectManager and TestBuilderDescribe objects passed to initializeTests.

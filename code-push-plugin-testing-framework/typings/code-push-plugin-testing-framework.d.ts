@@ -406,6 +406,8 @@ declare module 'code-push-plugin-testing-framework/script/testBuilder' {
 declare module 'code-push-plugin-testing-framework/script/testConfig' {
 	export const TestAppName: string;
 	export const TestNamespace: string;
+	export const TestRNVersion: string;
+	export const TestMinIOSTarget: string;
 	export const AcquisitionSDKPluginName: string;
 	export const templatePath: string;
 	export const thisPluginInstallString: string;
@@ -458,7 +460,7 @@ declare module 'code-push-plugin-testing-framework/script/testUtil' {
 	    /**
 	     * Replaces a regex in a file with a given string.
 	     */
-	    static replaceString(filePath: string, regex: string, replacement: string): void;
+	    static replaceString(filePath: string, regex: any, replacement: string): void;
 	    /**
 	     * Copies a file from a given location to another.
 	     */
