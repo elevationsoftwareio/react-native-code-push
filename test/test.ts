@@ -219,7 +219,7 @@ class RNIOS extends Platform.IOS implements RNPlatform {
                     .then(TestUtil.copyFile.bind(undefined,
                         path.join(TestConfig.templatePath, "ios", TestConfig.TestAppName, "AppDelegate.mm"),
                         appDelegatePath, true))
-                    .then<void>(TestUtil.replaceString.bind(undefined, appDelegatePath, TestUtil.CODE_PUSH_TEST_APP_NAME_PLACEHOLDER, TestConfig.TestAppName));
+                    .then<void>(TestUtil.replaceString.bind(undefined, appDelegatePath, TestUtil.CODE_PUSH_TEST_APP_NAME_PLACEHOLDER, TestConfig.TestAppName)).done(resolve, reject);
             }, 5000);
         });
     }
