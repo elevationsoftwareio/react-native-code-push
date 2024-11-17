@@ -25,6 +25,14 @@ stages:
       displayName: 'Start adb server'
 
     - script: |
+        brew install --cask adoptopenjdk/openjdk/adoptopenjdk8
+      displayName: 'Install Java 8'
+
+    - script: |
+        export JAVA_HOME=$(/usr/libexec/java_home -v 1.8)
+      displayName: 'Set Java 8'
+
+    - script: |
         $ANDROID_HOME/tools/bin/sdkmanager "system-images;android-$(api-level);google_apis;x86"
       displayName: 'Download system image'
 
