@@ -20,6 +20,7 @@ function initializeTests(projectManager, supportedTargetPlatforms, describeTests
     console.log("Initializing tests for " + testUtil_1.TestUtil.getPluginName());
     console.log(TestConfig.TestAppName + "\n" + TestConfig.TestNamespace);
     console.log("Test RN Version:" + TestConfig.TestRNVersion + "\n");
+    console.log("Test using new architecture: " + TestConfig.TestUseNewArchitecture);
     console.log("Testing " + TestConfig.thisPluginPath + ".");
     targetPlatforms.forEach(function (platform) {
         console.log("On " + platform.getName());

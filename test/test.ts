@@ -31,8 +31,8 @@ interface RNPlatform {
     getBundleName(): string;
 
     /**
-    * Returns whether or not this platform supports diffs.
-    */
+     * Returns whether or not this platform supports diffs.
+     */
     isDiffsSupported(): boolean;
 
     /**
@@ -43,7 +43,7 @@ interface RNPlatform {
     /**
      * Installs the platform on the given project.
      */
-    installPlatform(projectDirectory: string): Q.Promise<void>;
+    installPlatform(projectDirectory: string): Promise<void>;
 
     /**
      * Installs the binary of the given project on this platform.
@@ -85,40 +85,53 @@ class RNAndroid extends Platform.Android implements RNPlatform {
     /**
      * Installs the platform on the given project.
      */
-    installPlatform(projectDirectory: string): Q.Promise<void> {
-        const innerprojectDirectory: string = path.join(projectDirectory, TestConfig.TestAppName);
-        const gradleContent: string = slash(path.join(innerprojectDirectory, "node_modules", "react-native-code-push", "android", "codepush.gradle"));
 
-        //// Set up gradle to build CodePush with the app
-        // Add CodePush to android/app/build.gradle
-        const buildGradle = path.join(innerprojectDirectory, "android", "app", "build.gradle");
+     async installPlatform(projectDirectory: string): Promise<void> {
+        const innerProjectDirectory = path.join(projectDirectory, TestConfig.TestAppName);
+        const gradleContent = slash(
+            path.join(innerProjectDirectory, "node_modules", "react-native-code-push", "android", "codepush.gradle")
+        );
 
-        TestUtil.replaceString(buildGradle,
-            "apply from: file\\(\"../../node_modules/@react-native-community/cli-platform-android/native_modules.gradle\"\\); applyNativeModulesAppBuildGradle\\(project\\)",
-            "apply from: file(\"../../node_modules/@react-native-community/cli-platform-android/native_modules.gradle\"); applyNativeModulesAppBuildGradle(project)\napply from: \"" + gradleContent + "\"");
+        try {
+            // Set up gradle to build CodePush with the app
+            const buildGradle = path.join(innerProjectDirectory, "android", "app", "build.gradle");
+            await TestUtil.replaceString(
+                buildGradle,
+                /apply from: file\(".*node_modules\/@react-native-community\/cli-platform-android\/native_modules.gradle"\); applyNativeModulesAppBuildGradle\(project\)/,
+                `apply from: file("../../node_modules/@react-native-community/cli-platform-android/native_modules.gradle"); applyNativeModulesAppBuildGradle(project)\napply from: "${gradleContent}"`
+            );
+            const gradleProperties = path.join(innerProjectDirectory, "android", "gradle.properties");
+            // Set thew new architecture for the project
+            await TestUtil.replaceString(gradleProperties, "newArchEnabled=true", `newArchEnabled=${TestConfig.TestUseNewArchitecture ? "true" : "false"}`);
 
-        // Add CodePush to android/settings.gradle
-        const settingsGradle = path.join(innerprojectDirectory, "android", "settings.gradle");
-        TestUtil.replaceString(settingsGradle,
-            "include ':app'",
-            "include ':app', ':react-native-code-push'\nproject(':react-native-code-push').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-code-push/android/app')");
+            // Add CodePush to android/settings.gradle
+            const settingsGradle = path.join(innerProjectDirectory, "android", "settings.gradle");
+            await TestUtil.replaceString(
+                settingsGradle,
+                "include ':app'",
+                `include ':app', ':react-native-code-push'\nproject(':react-native-code-push').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-code-push/android/app')`
+            );
 
-        //// Set the app version to 1.0.0 instead of 1.0
-        // Set the app version to 1.0.0 in android/app/build.gradle
-        TestUtil.replaceString(buildGradle, "versionName \"1.0\"", "versionName \"1.0.0\"");
-        // Set the app version to 1.0.0 in AndroidManifest.xml
-        TestUtil.replaceString(path.join(innerprojectDirectory, "android", "app", "src", "main", "AndroidManifest.xml"), "android:versionName=\"1.0\"", "android:versionName=\"1.0.0\"");
+            // Set the app version to 1.0.0 instead of 1.0
+            await TestUtil.replaceString(buildGradle, /versionName "1.0"/, "versionName \"1.0.0\"");
+            const androidManifest = path.join(innerProjectDirectory, "android", "app", "src", "main", "AndroidManifest.xml");
+            await TestUtil.replaceString(androidManifest, /android:versionName="1.0"/, "android:versionName=\"1.0.0\"");
 
-        //// Replace the MainApplication.java with the correct server url and deployment key
-        const string = path.join(innerprojectDirectory, "android", "app", "src", "main", "res", "values", "strings.xml");
-        const AndroidManifest = path.join(innerprojectDirectory, "android", "app", "src", "main", "AndroidManifest.xml");
-        TestUtil.replaceString(string, TestUtil.SERVER_URL_PLACEHOLDER, this.getServerUrl());
-        TestUtil.replaceString(string, TestUtil.ANDROID_KEY_PLACEHOLDER, this.getDefaultDeploymentKey());
-        TestUtil.replaceString(AndroidManifest, "android:allowBackup=\"false\"", "android:allowBackup=\"false\"" + "\n\t" + "android:usesCleartextTraffic=\"true\"");
+            // Replace placeholders in strings.xml and AndroidManifest.xml
+            const stringsXml = path.join(innerProjectDirectory, "android", "app", "src", "main", "res", "values", "strings.xml");
+            await TestUtil.replaceString(stringsXml, TestUtil.SERVER_URL_PLACEHOLDER, this.getServerUrl());
+            await TestUtil.replaceString(stringsXml, TestUtil.ANDROID_KEY_PLACEHOLDER, this.getDefaultDeploymentKey());
+            await TestUtil.replaceString(androidManifest, /android:allowBackup="false"/,
+                "android:allowBackup=\"false\"\n\tandroid:usesCleartextTraffic=\"true\""
+            );
 
-
-        return Q<void>(null);
+            console.log("Platform installation completed successfully.");
+        } catch (error) {
+            console.error("Error during platform installation:", error);
+            throw error;
+        }
     }
+
 
     /**
      * Installs the binary of the given project on this platform.
@@ -189,46 +202,106 @@ class RNIOS extends Platform.IOS implements RNPlatform {
     /**
      * Installs the platform on the given project.
      */
-    installPlatform(projectDirectory: string): Q.Promise<void> {
-        const iOSProject: string = path.join(projectDirectory, TestConfig.TestAppName, "ios");
-        const infoPlistPath: string = path.join(iOSProject, TestConfig.TestAppName, "Info.plist");
-        const appDelegatePath: string = path.join(iOSProject, TestConfig.TestAppName, "AppDelegate.mm");
-        const pbxProjPath: string = path.join(iOSProject, TestConfig.TestAppName + ".xcodeproj", "project.pbxproj");
-        const podfile: string = path.join(iOSProject, "Podfile");
-        TestUtil.replaceString(pbxProjPath,
-            /IPHONEOS_DEPLOYMENT_TARGET = \d+(\.\d+)?;/g, `IPHONEOS_DEPLOYMENT_TARGET = ${TestConfig.TestMinIOSTarget};`);
-        TestUtil.replaceString(podfile, /platform :ios, min_ios_version_supported/g, `platform :ios, ${TestConfig.TestMinIOSTarget}`);
-        return Q.Promise<void>((resolve, reject) => {
-            return setTimeout(() => {
-                return TestUtil.getProcessOutput("pod install", {cwd: iOSProject})
-                    // Put the IOS deployment key in the Info.plist
-                    .then(TestUtil.replaceString.bind(undefined, infoPlistPath,
-                        "</dict>\n</plist>",
-                        "<key>CodePushDeploymentKey</key>\n\t<string>" + this.getDefaultDeploymentKey() + "</string>\n\t<key>CodePushServerURL</key>\n\t<string>" + this.getServerUrl() + "</string>\n\t</dict>\n</plist>"))
-                    // Set the app version to 1.0.0 instead of 1.0 in the Info.plist
-                    .then(TestUtil.replaceString.bind(undefined, infoPlistPath, "1.0", "1.0.0"))
-                    // Remove dependence of CFBundleShortVersionString from project.pbxproj
-                    .then(TestUtil.replaceString.bind(undefined, infoPlistPath, "\\$\\(MARKETING_VERSION\\)", "1.0.0"))
-                    // Fix the linker flag list in project.pbxproj (pod install adds an extra comma)
-                    .then(TestUtil.replaceString.bind(undefined, path.join(iOSProject, TestConfig.TestAppName + ".xcodeproj", "project.pbxproj"),
-                        "\"[$][(]inherited[)]\",\\s*[)];", "\"$(inherited)\"\n\t\t\t\t);"))
-                    // Add the correct bundle identifier
-                    .then(TestUtil.replaceString.bind(undefined, path.join(iOSProject, TestConfig.TestAppName + ".xcodeproj", "project.pbxproj"),
-                        "PRODUCT_BUNDLE_IDENTIFIER = [^;]*", "PRODUCT_BUNDLE_IDENTIFIER = \"" + TestConfig.TestNamespace + "\""))
-                    // Copy the AppDelegate.mm to the project
-                    .then(TestUtil.copyFile.bind(undefined,
-                        path.join(TestConfig.templatePath, "ios", TestConfig.TestAppName, "AppDelegate.mm"),
-                        appDelegatePath, true))
-                    .then<void>(TestUtil.replaceString.bind(undefined, appDelegatePath, TestUtil.CODE_PUSH_TEST_APP_NAME_PLACEHOLDER, TestConfig.TestAppName)).done(resolve, reject);
-            }, 5000);
-        });
+
+    async updatePodfile(podfilePath: string): Promise<void> {
+
+        const newPostInstallBlock = `
+post_install do |installer|
+    installer.pods_project.targets.each do |target|
+     target.build_configurations.each do |config|
+      config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '16.6'
+      config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] ||= ['$(inherited)', '_LIBCPP_ENABLE_CXX17_REMOVED_UNARY_BINARY_FUNCTION']
+     end
+    end
+    react_native_post_install(
+      installer,
+      # Set \`mac_catalyst_enabled\` to \`true\` in order to apply patches
+      # necessary for Mac Catalyst builds
+      :mac_catalyst_enabled => false
+    )
+    __apply_Xcode_12_5_M1_post_install_workaround(installer)
+  end`;
+
+        const searchPattern = /post_install do \|installer\|[\s\S]*?__apply_Xcode_12_5_M1_post_install_workaround\(installer\)\n\s*end/;
+
+        try {
+            await TestUtil.replaceString(podfilePath, searchPattern, newPostInstallBlock);
+            console.log("Podfile updated successfully.");
+        } catch (error) {
+            console.error("Error updating Podfile:", error);
+        }
     }
+
+    async installPlatform(projectDirectory: string): Promise<void> {
+        const iOSProject = path.join(projectDirectory, TestConfig.TestAppName, "ios");
+        const infoPlistPath = path.join(iOSProject, TestConfig.TestAppName, "Info.plist");
+        const appDelegatePath = path.join(iOSProject, TestConfig.TestAppName, "AppDelegate.mm");
+        const pbxProjPath = path.join(iOSProject, TestConfig.TestAppName + ".xcodeproj", "project.pbxproj");
+        const podfile = path.join(iOSProject, "Podfile");
+        try {
+            // Set the deployment target to the minimum supported iOS version
+            // Update the Podfile to use the minimum supported iOS version before running `pod install`
+            // This is because the out of the box react-native uses a version below the minimum supported iOS version for CodePush
+            await TestUtil.replaceString(
+                podfile,
+                /platform :ios, min_ios_version_supported/g,
+                `platform :ios, ${TestConfig.TestMinIOSTarget}`
+            );
+            //@TODO determine if this is still needed
+            await this.updatePodfile(podfile);
+            // Run `pod install`
+            await TestUtil.getProcessOutput(`RCT_NEW_ARCH_ENABLED=${TestConfig.TestUseNewArchitecture ? `1` : `0`} pod install`, {cwd: iOSProject});
+
+            await TestUtil.replaceString(infoPlistPath, "</dict>\n</plist>", "<key>CodePushDeploymentKey</key>\n\t<string>" + this.getDefaultDeploymentKey() + "</string>\n\t<key>CodePushServerURL</key>\n\t<string>" + this.getServerUrl() + "</string>\n\t</dict>\n</plist>");
+            //
+            // // Set app version and fix CFBundleShortVersionString in Info.plist
+            // await TestUtil.replaceString(infoPlistPath, "1.0", "1.0.0");
+            // await TestUtil.replaceString(infoPlistPath, "\\$\\(MARKETING_VERSION\\)", "1.0.0");
+            // await TestUtil.replaceString(infoPlistPath, "\\$\\(CURRENT_PROJECT_VERSION\\)", "1.0.0");
+
+            // Fix linker flag in pbxproj
+            await TestUtil.replaceString(
+                pbxProjPath,
+                "\"[$][(]inherited[)]\",\\s*[)];",
+                "\"$(inherited)\"\n\t\t\t\t);"
+            );
+
+            // Update bundle identifier in pbxproj
+            await TestUtil.replaceString(
+                pbxProjPath,
+                "PRODUCT_BUNDLE_IDENTIFIER = [^;]*",
+                `PRODUCT_BUNDLE_IDENTIFIER = "${TestConfig.TestNamespace}"`
+            );
+
+            // Copy the AppDelegate.mm file to the project
+            await TestUtil.copyFile(
+                path.join(TestConfig.templatePath, "ios", TestConfig.TestAppName, "AppDelegate.mm"),
+                appDelegatePath,
+                true
+            );
+
+            // Replace placeholder in AppDelegate.mm
+            await TestUtil.replaceString(
+                appDelegatePath,
+                TestUtil.CODE_PUSH_TEST_APP_NAME_PLACEHOLDER,
+                TestConfig.TestAppName
+            );
+
+            console.log("Platform installation completed successfully.");
+        } catch (error) {
+            console.error("Error during platform installation:", error);
+            throw error;
+        }
+    }
+
 
     /**
      * Installs the binary of the given project on this platform.
      */
     installApp(projectDirectory: string): Q.Promise<void> {
-        return TestUtil.getProcessOutput("xcrun simctl install booted " + this.getBinaryPath(projectDirectory)).then(() => { return null; });
+        return TestUtil.getProcessOutput("xcrun simctl install booted " + this.getBinaryPath(projectDirectory)).then(() => {
+            return null;
+        });
     }
 
     /**
@@ -253,10 +326,17 @@ class RNIOS extends Platform.IOS implements RNPlatform {
         return this.getEmulatorManager().getTargetEmulator()
             .then((targetEmulator: string) => {
                 return TestUtil.getProcessOutput("xcodebuild -workspace " + path.join(iOSProject, TestConfig.TestAppName) + ".xcworkspace -scheme " + TestConfig.TestAppName +
-                    " -configuration Release -destination \"platform=iOS Simulator,id=" + targetEmulator + "\" -derivedDataPath build EXCLUDED_ARCHS=arm64", { cwd: iOSProject, timeout: 30 * 60 * 1000, maxBuffer: 1024 * 1024 * 5000, noLogStdOut: true });
+                    " -configuration Release -destination \"platform=iOS Simulator,id=" + targetEmulator + "\" -derivedDataPath build EXCLUDED_ARCHS=arm64", {
+                    cwd: iOSProject,
+                    timeout: 30 * 60 * 1000,
+                    maxBuffer: 1024 * 1024 * 5000,
+                    noLogStdOut: true
+                });
             })
             .then<void>(
-                () => { return null; },
+                () => {
+                    return null;
+                },
                 (error: any) => {
                     console.info(error);
                     // The first time an iOS project is built, it fails because it does not finish building libReact.a before it builds the test app.
@@ -264,7 +344,7 @@ class RNIOS extends Platform.IOS implements RNPlatform {
                     if (!RNIOS.iosFirstBuild[projectDirectory]) {
                         const iosBuildFolder = path.join(iOSProject, "build");
                         if (fs.existsSync(iosBuildFolder)) {
-                            del.sync([iosBuildFolder], { force: true });
+                            del.sync([iosBuildFolder], {force: true});
                         }
                         RNIOS.iosFirstBuild[projectDirectory] = true;
                         return this.buildApp(projectDirectory);

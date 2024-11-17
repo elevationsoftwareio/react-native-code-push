@@ -408,6 +408,7 @@ declare module 'code-push-plugin-testing-framework/script/testConfig' {
 	export const TestNamespace: string;
 	export const TestRNVersion: string;
 	export const TestMinIOSTarget: string;
+	export const TestUseNewArchitecture: null;
 	export const AcquisitionSDKPluginName: string;
 	export const templatePath: string;
 	export const thisPluginInstallString: string;

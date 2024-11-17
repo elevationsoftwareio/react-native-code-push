@@ -16,8 +16,9 @@ var DEFAULT_PLUGIN_TGZ_NAME = TestUtil_1.TestUtil.getPluginName() + "-" + TestUt
 // CONST VARIABLES
 exports.TestAppName = "TestCodePush";
 exports.TestNamespace = "com.testcodepush";
-exports.TestRNVersion = "0.71.3";
-exports.TestMinIOSTarget = "16.6";
+exports.TestRNVersion = "0.76.2";
+exports.TestMinIOSTarget = "15.5";
+exports.TestUseNewArchitecture = false;
 exports.AcquisitionSDKPluginName = "code-push";
 exports.templatePath = path.join(__dirname, "../../test/template");
 exports.thisPluginInstallString = TestUtil_1.TestUtil.resolveBooleanVariables(process.env.NPM) ? `npm install ${NPM_PLUGIN_PATH}` : `npm pack ${DEFAULT_PLUGIN_PATH} && npm install ${DEFAULT_PLUGIN_TGZ_NAME} && npm link`;
