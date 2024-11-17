@@ -247,7 +247,7 @@ post_install do |installer|
                 /platform :ios, min_ios_version_supported/g,
                 `platform :ios, ${TestConfig.TestMinIOSTarget}`
             );
-            //@TODO determine if this is still needed
+            // @TODO determine if this is still needed
             await this.updatePodfile(podfile);
             // Run `pod install`
             await TestUtil.getProcessOutput(`RCT_NEW_ARCH_ENABLED=${TestConfig.TestUseNewArchitecture ? `1` : `0`} pod install`, {cwd: iOSProject});
