@@ -6,10 +6,10 @@ pr:
 
 variables:
 - name: api-level
-  value: '27' 
+  value: '27'
 
 pool:
-  vmImage: 'macOS-12'
+  vmImage: 'macOS-15'
 
 stages:
 - stage: RunTests
@@ -39,20 +39,20 @@ stages:
     - script: |
         $ANDROID_HOME/platform-tools/adb wait-for-device shell 'while [[ -z $(getprop sys.boot_completed | tr -d '\r') ]]; do sleep 1; done'
       displayName: 'Wait for emulator to boot'
-   
+
     - script: |
-         adb shell settings put global window_animation_scale 0.0    
-      displayName: 'Disable animations and transitions'  
+         adb shell settings put global window_animation_scale 0.0
+      displayName: 'Disable animations and transitions'
 
     - script: |
          adb shell settings put global transition_animation_scale 0.0
       displayName: 'Disable animations and transitions'
 
     - script: |
-         adb shell settings put global animator_duration_scale 0.0   
+         adb shell settings put global animator_duration_scale 0.0
       displayName: 'Disable animations and transitions'
 
-    
+
     - task: JavaToolInstaller@0
       inputs:
         versionSpec: '11'
@@ -89,6 +89,6 @@ stages:
         npm run test:fast:ios
       displayName: 'Run tests'
 
-    
-          
+
+
 
