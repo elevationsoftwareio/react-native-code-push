@@ -27,7 +27,7 @@ stages:
     - script: |
         brew install --cask adoptopenjdk/openjdk/adoptopenjdk8
       displayName: 'Install Java 8'
-
+      continueOnError: true
     - script: |
         export JAVA_HOME=$(/usr/libexec/java_home -v 1.8)
       displayName: 'Set Java 8'
