@@ -219,6 +219,8 @@ failCallback:(void (^)(NSError *err))failCallback;
 
 @end
 
+/// Logs the message to NSLog
+/// - Parameter formatString: formatString formatted text of what should be logged
 void CPLog(NSString *formatString, ...);
 
 typedef NS_ENUM(NSInteger, CodePushInstallMode) {

@@ -28,7 +28,8 @@
     "test:fast:ios": "mocha --recursive bin/test --ios",
     "test:debugger:android": "mocha --recursive --inspect-brk=0.0.0.0 bin/test --android",
     "test:debugger:ios": "mocha --recursive --inspect-brk=0.0.0.0 bin/test --ios",
-    "tslint": "tslint -c tslint.json test/**/*.ts"
+    "tslint": "tslint -c tslint.json test/**/*.ts",
+    "generate:docs:ios": "cd ios/CodePush && jazzy --objc --umbrella-header CodePush.h --framework-root . --module CodePush "
   },
   "repository": {
     "type": "git",
